@@ -36,22 +36,24 @@ int main(int argc, const char * argv[]) {
     raster.backfaceCull= 0;
     
 
-    raster.camera.locate(0, 0, 0);
+    raster.camera.locate(0, 0, 1);
     
     
     //Object test
-    TDObject craft;
-    craft.loadPly("/Users/matt/Library/Mobile\ Documents/com\~apple\~CloudDocs/vulc1.ply");
+    TDMesh vulcanMesh;
+    vulcanMesh.loadPly("/Users/matt/Library/Mobile\ Documents/com\~apple\~CloudDocs/vulc1.ply");
+    TDObject craft(&vulcanMesh);
     craft.vz=-0.1;
-    craft.locate(-1, 0, -4);  //The object can't be rasterized until a locate command is issued.
+    craft.locate(-1, 0, -4);
     
-    TDObject car;
+    TDMesh deloreanMesh;
+    deloreanMesh.loadPly("/Users/matt/Library/Mobile\ Documents/com\~apple\~CloudDocs/delor1.ply");
+    TDObject car(&deloreanMesh);
     car.vz=-0.1;
-    car.locate(1, 0, -1);     //The object can't be rasterized until a locate command is issued.
+    car.locate(1, 0, -1);
     
-    //craft.loadPly("/Users/matt/Library/Mobile\ Documents/com\~apple\~CloudDocs/NormalCubeASCII.ply");
-    //craft.loadPly("/Users/matt/Library/Mobile\ Documents/com\~apple\~CloudDocs/sphere1.ply");
-    car.loadPly("/Users/matt/Library/Mobile\ Documents/com\~apple\~CloudDocs/delor1.ply");
+
+
     
     
     

@@ -43,6 +43,29 @@ struct TDQuad{
     Col colour;
 };
 
+
+class TDMesh{
+public:
+    
+    ~TDMesh();
+    
+    TDPoint* localVertex; //Vertex array, vertices are in local coordinates
+    int vertices;         //Vertex count
+    
+    TDTriangle* triangle; //Triangle array
+    int triangles;        //Triangle count
+    
+    //modelling
+    void init(int,int);   //initilise object with memory for vertices and triangles
+    int addVertex(float,float,float);   // takes x,y,z and returns the vertex index
+    int addTriangle(int,int,int);       // takes vertex indices and retruns the triangle index
+    void setTriangleColour(int,float,float,float,float);    //sets the r,g,b,a value for triangle at index
+    
+    void loadPly(char*);    //file name of a stanford Ply model (little endian binary and ASCII only).
+    
+};
+
+
 class TDCamera{
 public:
     TDPoint position;     //Camera position in world coordinates
@@ -56,9 +79,12 @@ public:
     void rotate(float,float,float); //Relative
 };
 
+
+
 class TDObject{
 public:
     
+    TDObject(TDMesh*);
     ~TDObject();
     
     float x();
@@ -70,20 +96,8 @@ public:
     float vy;
     float vz;
     
-    TDPoint* localVertex; //Vertex array, vertices are in local coordinates
-    TDPoint* vertex;      //Vertex array, vertices are in world coordinates
-    int vertices;         //Vertex count
-    
-    TDTriangle* triangle; //Triangle array
-    int triangles;        //Triangle count
-    
-    //modelling
-    void init(int,int);   //initilise object with memory for vertices and triangles
-    int addVertex(float,float,float);   // takes x,y,z and returns the vertex index
-    int addTriangle(int,int,int);       // takes vertex indices and retruns the triangle index
-    void setTriangleColour(int,float,float,float,float);    //sets the r,g,b,a value for triangle at index
-    
-    void loadPly(char*);    //file name of a stanford Ply model (little endian binary only).
+    TDMesh* mesh;
+    TDPoint* vertex;      //Vertex array, vertices in world coordinates
     
     //These operate on the object vertices
     void locate(float,float,float); //Absolute
@@ -92,19 +106,18 @@ public:
     void orient(float,float,float); //Absolute
     void rotate(float,float,float); //Relative
     
-    void  size(float,float,float);  //Absoulte *
+    void  size(float,float,float);  //Absolute *
     void scale(float,float,float);  //Relative *
     
     
 private:
     TDPoint position;     //object position in world coordinates
     TDPoint angle;        //object rotion in world coordinates
-    TDPoint proportion;
+    TDPoint proportion;   //object scale factor
 };
 
 
 
-//Rasterizer
 
 class Rasterizer{
 public:
@@ -139,5 +152,10 @@ private:
 };
 
 
+//Scene
+
+class TDScene{
+    
+};
 
 #endif /* SDL_3D_hpp */

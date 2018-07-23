@@ -15,45 +15,10 @@
 #define TYPE_BINARYLE 2
 #define TYPE_BINARYBE 3
 
-void TDCamera::locate(float x,float y,float z){
-    
-    position.x=x;
-    position.y=y;
-    position.z=z;
-    
-}
-
-void TDCamera::move(float x,float y,float z){
-    
-    position.x+=x;
-    position.y+=y;
-    position.z+=z;
-    
-}
-
-void TDCamera::rotate(float xA, float yA, float zA){
-    
-    angle.x +=xA;
-    angle.y +=yA;
-    angle.z +=zA;
-    
-}
-
-void TDCamera::orient(float xA,float yA,float zA){
-    
-    angle.x = xA;
-    angle.y = yA;
-    angle.z = zA;
-    
-}
-
-//Object************************************
-
-
-void TDObject::init(int verts, int tri){
+//Mesh
+void TDMesh::init(int verts, int tri){
     
     localVertex =(TDPoint*)calloc(verts, sizeof(TDPoint));
-    vertex =(TDPoint*)calloc(verts, sizeof(TDPoint));
     vertices = verts;
     
     triangles = tri;
@@ -61,17 +26,13 @@ void TDObject::init(int verts, int tri){
     
 }
 
-float TDObject::x(){return position.x;}
-float TDObject::y(){return position.y;}
-float TDObject::z(){return position.z;};
-
-void TDObject::loadPly(char* filename){
+void TDMesh::loadPly(char* filename){
     
     
     SDL_RWops *file = SDL_RWFromFile(filename, "rb");
     
     Sint64 res_size = SDL_RWsize(file);
-    printf("Size: %d\n",res_size);
+    printf("Size: %lld\n",res_size);
     
     Uint8 buf[res_size];
     
@@ -295,12 +256,11 @@ void TDObject::loadPly(char* filename){
     printf("Object Loaded\n");
 }
 
-int TDObject::addVertex(float x, float y, float z){
+int TDMesh::addVertex(float x, float y, float z){
     
     ++vertices;
     
     localVertex = (TDPoint*) realloc(localVertex, sizeof(TDPoint)*vertices);
-    vertex      = (TDPoint*) realloc(vertex, sizeof(TDPoint)*vertices);
     
     int thisVertex = vertices-1;
     
@@ -311,7 +271,7 @@ int TDObject::addVertex(float x, float y, float z){
     return thisVertex;
 }
 
-int TDObject::addTriangle(int a, int b, int c){
+int TDMesh::addTriangle(int a, int b, int c){
     
     ++triangles;
     
@@ -326,8 +286,7 @@ int TDObject::addTriangle(int a, int b, int c){
     return thisTriangle;
 }
 
-
-void TDObject::setTriangleColour(int tri, float r, float g, float b, float a){
+void TDMesh::setTriangleColour(int tri, float r, float g, float b, float a){
     
     triangle[tri].colour.r = r;
     triangle[tri].colour.g = g;
@@ -335,19 +294,73 @@ void TDObject::setTriangleColour(int tri, float r, float g, float b, float a){
     triangle[tri].colour.a = a;
 }
 
-TDObject::~TDObject(){
+TDMesh::~TDMesh(){
     
     //Free up the allocated memory.
     if(localVertex !=nullptr){
         free(localVertex);
     }
     
-    if(vertex !=nullptr){
-        free(vertex);
-    }
-    
     if(triangle !=nullptr){
         free(triangle);
+    }
+    
+}
+
+//Camera
+void TDCamera::locate(float x,float y,float z){
+    
+    position.x=x;
+    position.y=y;
+    position.z=z;
+    
+}
+
+void TDCamera::move(float x,float y,float z){
+    
+    position.x+=x;
+    position.y+=y;
+    position.z+=z;
+    
+}
+
+void TDCamera::rotate(float xA, float yA, float zA){
+    
+    angle.x +=xA;
+    angle.y +=yA;
+    angle.z +=zA;
+    
+}
+
+void TDCamera::orient(float xA,float yA,float zA){
+    
+    angle.x = xA;
+    angle.y = yA;
+    angle.z = zA;
+    
+}
+
+
+//Object************************************
+
+TDObject::TDObject(TDMesh* m){
+    
+    mesh = m;
+    vertex =(TDPoint*)calloc(mesh->vertices, sizeof(TDPoint));  // allocate  memory for the world vertices
+    locate(0,0,0);
+}
+
+float TDObject::x(){return position.x;}
+float TDObject::y(){return position.y;}
+float TDObject::z(){return position.z;};
+
+
+TDObject::~TDObject(){
+    
+    //Free up the allocated memory.
+    
+    if(vertex !=nullptr){
+        free(vertex);
     }
     
 }
@@ -359,10 +372,10 @@ void TDObject::locate(float x,float y,float z){
     position.z=z;
     
     //translate all local vertices to world coordinates
-    for(int i=0;i<vertices;++i){
-        vertex[i].x = localVertex[i].x + x;
-        vertex[i].y = localVertex[i].y + y;
-        vertex[i].z = localVertex[i].z + z;
+    for(int i=0;i<mesh->vertices;++i){
+        vertex[i].x = mesh->localVertex[i].x + x;
+        vertex[i].y = mesh->localVertex[i].y + y;
+        vertex[i].z = mesh->localVertex[i].z + z;
     }
     
 }
@@ -374,7 +387,7 @@ void TDObject::move(float x,float y,float z){
     position.z+=z;
     
     //translate all vertices relative world coordinates
-    for(int i=0;i<vertices;++i){
+    for(int i=0;i<mesh->vertices;++i){
         vertex[i].x = vertex[i].x + x;
         vertex[i].y = vertex[i].y + y;
         vertex[i].z = vertex[i].z + z;
@@ -409,10 +422,10 @@ void TDObject::rotate(float xA, float yA, float zA){
     float Azy = cosb*sinc;
     float Azz = cosb*cosc;
     
-    for (int  i = 0; i < vertices; ++i) {
-        float px = localVertex[i].x;
-        float py = localVertex[i].y;
-        float pz = localVertex[i].z;
+    for (int  i = 0; i < mesh->vertices; ++i) {
+        float px = mesh->localVertex[i].x;
+        float py = mesh->localVertex[i].y;
+        float pz = mesh->localVertex[i].z;
         
         vertex[i].x = (Axx*px + Axy*py + Axz*pz)+position.x;
         vertex[i].y = (Ayx*px + Ayy*py + Ayz*pz)+position.y;
@@ -439,9 +452,14 @@ SDL_Point Rasterizer::projection(TDPoint* point){
     
     SDL_Point retval;
     
+
+    
+    //Camera aware projection
+    //retval.x = (int)((camera.position.z * (point->x-camera.position.x)) / (camera.position.z + point->z) + camera.position.x);
+    //retval.y = (int)((camera.position.z * (point->y-camera.position.y)) / (camera.position.z + point->z) + camera.position.y);
+    
+    //fixed camera
     float z = 1 - (point->z*focalLength);
-    
-    
     retval.x = (int)((point->x/z)*hWidth);
     retval.y = -(int)((point->y/z)*hHeight);
     
@@ -488,36 +506,14 @@ void Rasterizer::drawTriangle(TDPoint* vertex, TDTriangle* triangle){
     }
     
     SDL_RenderDrawLines(renderer, tri, 4);
-    //SDL_RenderPresent(renderer);
-    //printf("DrawLine\n");
-    
-    /*
-     SDL_Point tri[4];
-     
-     tri[0].x = (int)((camera.z * (triangle->a.x-camera.x)) / (camera.z + triangle->a.z) + camera.x);
-     tri[0].y = (int)((camera.z * (triangle->a.y-camera.y)) / (camera.z + triangle->a.z) + camera.y);
-     
-     tri[1].x = (int)((camera.z * (triangle->b.x-camera.x)) / (camera.z + triangle->b.z) + camera.x);
-     tri[1].y = (int)((camera.z * (triangle->b.y-camera.y)) / (camera.z + triangle->b.z) + camera.y);
-     
-     tri[2].x = (int)((camera.z * (triangle->c.x-camera.x)) / (camera.z + triangle->c.z) + camera.x);
-     tri[2].y = (int)((camera.z * (triangle->c.y-camera.y)) / (camera.z + triangle->c.z) + camera.y);
-     
-     tri[3].x = tri[0].x;
-     tri[3].y = tri[0].y;
-     
-     
-     
-     SDL_RenderDrawLines(renderer, tri, 4);
-     */
 }
 
 
 
 void Rasterizer::drawObject(TDObject* object){
     
-    for(int i=0;i<object->triangles;++i){
-        drawTriangle(object->vertex, &object->triangle[i]);
+    for(int i=0;i<object->mesh->triangles;++i){
+        drawTriangle(object->vertex, &object->mesh->triangle[i]);
     }
     
 }
